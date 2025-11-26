@@ -1,0 +1,40 @@
+# Sample nftables rules for testing
+
+table inet filter
+
+chain input {
+    type filter hook input priority 0; policy accept;
+
+    # Allow established connections
+    ct state established,related accept
+
+    # Allow SSH from trusted network
+    ip saddr 192.168.1.0/24 tcp dport 22 accept
+
+    # Allow HTTP/HTTPS from anywhere
+    tcp dport 80 accept
+    tcp dport 443 accept
+
+    # Block traffic from suspicious IP
+    ip saddr 10.0.0.100 drop
+
+    # Allow DNS
+    udp dport 53 accept
+
+    # Drop everything else
+    drop
+}
+
+chain output {
+    type filter hook output priority 0; policy accept;
+
+    # Allow all outgoing
+    accept
+}
+
+chain forward {
+    type filter hook forward priority 0; policy drop;
+
+    # Forward traffic from LAN to WAN
+    ip saddr 192.168.0.0/16 accept
+}
