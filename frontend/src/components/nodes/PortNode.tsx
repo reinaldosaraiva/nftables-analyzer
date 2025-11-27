@@ -1,9 +1,15 @@
 "use client";
 
 import { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Handle, Position } from "@xyflow/react";
 
-function PortNode({ data }: NodeProps) {
+interface PortNodeProps {
+  data: {
+    label: string;
+  };
+}
+
+function PortNode({ data }: PortNodeProps) {
   return (
     <div className="px-4 py-2">
       <Handle type="target" position={Position.Top} />

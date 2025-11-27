@@ -35,8 +35,9 @@ FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
-# Copy installed packages from builder
+# Copy installed packages and binaries from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 COPY --from=builder /app/src /app/src
 
 # Create non-root user

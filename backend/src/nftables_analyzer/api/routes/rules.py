@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from nftables_analyzer.api.schemas import (
     GraphData,
+    HierarchicalParseResponse,
     ParseRequest,
     ParseResponse,
     QueryRequest,
@@ -40,6 +41,28 @@ async def parse_rules(request: ParseRequest) -> ParseResponse:
             graph=graph_data,
             count=len(rules),
         )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Parse error: {str(e)}")
+
+
+@router.post("/parse/hierarchy", response_model=HierarchicalParseResponse)
+async def parse_rules_hierarchical(request: ParseRequest) -> HierarchicalParseResponse:
+    """Parse nftables rules with full hierarchy (tables, chains, sets) for tree view."""
+    try:
+        # Parse rules with hierarchy
+        if request.format == "json":
+            parse_result = RuleParser.parse_json_hierarchical(request.content)
+        else:
+            parse_result = RuleParser.parse_text_hierarchical(request.content)
+
+        if not parse_result.tables and not parse_result.rules:
+            raise HTTPException(status_code=400, detail="No valid rules found")
+
+        # Generate hierarchical response
+        return GraphService.parse_result_to_hierarchical(parse_result)
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Parse error: {str(e)}")
 

@@ -4,7 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from nftables_analyzer.models import Conflict, Rule
+from nftables_analyzer.models import Conflict, Rule, SetDefinition
 
 
 class ParseRequest(BaseModel):
@@ -24,6 +24,7 @@ class GraphNode(BaseModel):
     data: dict[str, Any]
     position: dict[str, float]
     style: dict[str, Any] | None = None
+    parentId: str | None = None
 
 
 class GraphEdge(BaseModel):
@@ -43,12 +44,72 @@ class GraphData(BaseModel):
     edges: list[GraphEdge]
 
 
+# Hierarchical structures for tree view
+class ChainSummary(BaseModel):
+    """Summary of a chain for tree view."""
+
+    name: str
+    type: str | None = None
+    hook: str | None = None
+    policy: str = "accept"
+    rule_count: int
+    line_number: int
+
+
+class TableSummary(BaseModel):
+    """Summary of a table for tree view."""
+
+    name: str
+    family: str
+    chains: list[ChainSummary]
+    sets: list[SetDefinition]
+    chain_count: int
+    set_count: int
+    rule_count: int
+    line_number: int
+
+
+class RuleStats(BaseModel):
+    """Statistics about parsed rules."""
+
+    total_rules: int
+    total_tables: int
+    total_chains: int
+    total_sets: int
+    rules_by_action: dict[str, int]
+    rules_by_protocol: dict[str, int]
+    rules_by_table: dict[str, int]
+
+
+class TreeNodeData(BaseModel):
+    """Tree view node data for frontend."""
+
+    id: str
+    type: Literal["table", "chain", "rule", "set"]
+    label: str
+    depth: int
+    parent_id: str | None = None
+    children_count: int = 0
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class ParseResponse(BaseModel):
     """Response from parsing rules."""
 
     rules: list[Rule]
     graph: GraphData
     count: int
+
+
+class HierarchicalParseResponse(BaseModel):
+    """Response with full hierarchy for tree view and graph."""
+
+    tables: list[TableSummary]
+    sets: list[SetDefinition]
+    rules: list[Rule]
+    tree_nodes: list[TreeNodeData]
+    graph: GraphData
+    stats: RuleStats
 
 
 class QueryRequest(BaseModel):

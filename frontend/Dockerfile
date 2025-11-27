@@ -43,6 +43,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Create public directory if it doesn't exist
+RUN mkdir -p public
+
 # Build Next.js app
 RUN npm run build
 
@@ -51,17 +54,14 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Create non-root user
-RUN addgroup -g 1000 appuser && \
-    adduser -u 1000 -G appuser -s /bin/sh -D appuser
+# Copy necessary files from deps and builder (use existing node user)
+COPY --from=deps --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/.next ./.next
+COPY --from=builder --chown=node:node /app/public ./public
+COPY --from=builder --chown=node:node /app/package.json ./
+COPY --from=builder --chown=node:node /app/next.config.ts ./
 
-# Copy necessary files from deps and builder
-COPY --from=deps --chown=appuser:appuser /app/node_modules ./node_modules
-COPY --from=builder --chown=appuser:appuser /app/.next ./.next
-COPY --from=builder --chown=appuser:appuser /app/public ./public
-COPY --from=builder --chown=appuser:appuser /app/package.json ./
-
-USER appuser
+USER node
 
 EXPOSE 3000
 
